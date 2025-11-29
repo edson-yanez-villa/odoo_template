@@ -1,0 +1,50 @@
+services:
+  web:
+    container_name: ${WEB_HOST}
+    image: ${WEB_IMAGE_NAME}
+    env_file:
+      - .env
+    ports:
+      - "${WEB_PORT}:8069"
+      - "${WEBSOCKET_PORT}:8072"
+    volumes:
+      - ${ODOO_DATA_PATH:-./odoo-web-data}:/var/lib/odoo
+      - ./logs:/var/log/odoo
+      - ./config:/etc/odoo/
+      - ./addons:/mnt/extra-addons
+    environment:
+      HOST: ${ODOO_DB_HOST:-db}
+      PORT: ${ODOO_DB_PORT:-5432}
+      USER: ${ODOO_DB_USER:-odoo}
+      PASSWORD: ${ODOO_DB_PASSWORD:-odoo}
+    tty: true
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: ${POSTGRES_IMAGE:-./postgres:15-alpine}
+    container_name: ${DB_CONTAINER_NAME:-odoo-db}
+    profiles:
+      - dev
+      - stage
+    environment:
+      POSTGRES_USER: ${ODOO_DB_USER:-odoo}
+      POSTGRES_PASSWORD: ${ODOO_DB_PASSWORD:-odoo}
+      PGDATABASE: ${POSTGRES_DB:-postgres}
+    volumes:
+      - ${POSTGRES_DATA_PATH:-postgres-data}:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$PGDATABASE" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  odoo-web-data:
+  postgres-data:
+  logs:

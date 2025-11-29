@@ -1,0 +1,46 @@
+services:
+  web:
+    container_name: ${WEB_HOST}
+    image: "${WEB_IMAGE_NAME:-odoo}:${ODOO_VERSION}"
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        ODOO_VERSION: ${ODOO_VERSION}
+    env_file: .env
+    environment:
+      HOST: ${ODOO_DB_HOST}
+      PORT: ${ODOO_DB_PORT}
+      USER: ${ODOO_DB_USER}
+      PASSWORD: ${ODOO_DB_PASSWORD}
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8069/web/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - odoo-net
+    volumes:
+      - data:/var/lib/odoo
+      - logs:/var/log/odoo
+      - ./config:/etc/odoo/
+      - ./addons:/mnt/extra-addons
+      - ${ADDONS_ENTERPRISE}:/mnt/extra-addons/enterprise
+    ports:
+      - "${WEB_PORT}:8069"
+      - "${WEBSOCKET_PORT}:8072"
+networks:
+  odoo-net:
+    external: true
+volumes:
+  data:
+    name: "${WEB_HOST}-data"
+  logs:
+    name: "${WEB_HOST}-logs"

@@ -1,0 +1,21 @@
+# Data & logs
+odoo-web-data/
+logs/
+backups/
+volumes/
+
+# Secrets
+.env
+
+# Python/virtualenv
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Editor/OS noise
+.vscode/
+*.swp
+*~
+.DS_Store
